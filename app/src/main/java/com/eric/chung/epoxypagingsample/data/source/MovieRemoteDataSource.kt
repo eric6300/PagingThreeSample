@@ -1,26 +1,26 @@
 package com.eric.chung.epoxypagingsample.data.source
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.Transformations
-import androidx.paging.LivePagedListBuilder
-import androidx.paging.PagedList
-import com.eric.chung.epoxypagingsample.data.NetworkState
+import androidx.paging.*
+import androidx.paging.rxjava2.cachedIn
+import androidx.paging.rxjava2.flowable
 import com.eric.chung.epoxypagingsample.data.Movie
-import com.eric.chung.epoxypagingsample.data.MovieListDataSourceFactory
-import io.reactivex.rxjava3.disposables.CompositeDisposable
+import com.eric.chung.epoxypagingsample.data.MovieListDataSource
+import io.reactivex.Flowable
+import kotlinx.coroutines.CoroutineScope
 
-class MovieRemoteDataSource(compositeDisposable: CompositeDisposable) : DataSource {
+class MovieRemoteDataSource(private val viewModelScope: CoroutineScope) : DataSource {
 
-    private val sourceFactory = MovieListDataSourceFactory(compositeDisposable)
-    private val config = PagedList.Config.Builder()
-        .setInitialLoadSizeHint(40)
-        .setPageSize(40)
-        .build()
+    private val sourceFactory = MovieListDataSource()
 
-    override fun getTopRatedMovies(): LiveData<PagedList<Movie>> {
-        return LivePagedListBuilder(sourceFactory, config).build()
-    }
+    private val pager = Pager(
+        config = PagingConfig(
+            pageSize = 40,
+            initialLoadSize = 40
+        ),
+        pagingSourceFactory = { sourceFactory }
+    )
 
-    override fun getNetworkState(): LiveData<NetworkState> = Transformations.switchMap(sourceFactory.sourceLiveData) { it.networkState }
+    override fun getTopRatedMovies(): LiveData<PagingData<Movie>> = pager.liveData.cachedIn(viewModelScope)
 
 }

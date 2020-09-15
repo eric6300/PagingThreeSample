@@ -1,12 +1,10 @@
 package com.eric.chung.epoxypagingsample.data.source
 
 import androidx.lifecycle.LiveData
-import androidx.paging.PagedList
-import com.eric.chung.epoxypagingsample.data.NetworkState
+import androidx.paging.PagingData
 import com.eric.chung.epoxypagingsample.data.Movie
+import io.reactivex.Flowable
 
 interface Repository {
-    fun getTopRatedMovies(): LiveData<PagedList<Movie>>
-
-    fun getNetworkState(): LiveData<NetworkState>
+    fun getTopRatedMovies(): LiveData<PagingData<Movie>>
 }

@@ -1,58 +1,32 @@
 package com.eric.chung.epoxypagingsample.data
 
 import androidx.lifecycle.MutableLiveData
-import androidx.paging.PageKeyedDataSource
+import androidx.paging.rxjava2.RxPagingSource
 import com.eric.chung.epoxypagingsample.network.ApiManager
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.kotlin.subscribeBy
-import io.reactivex.rxjava3.observers.DisposableObserver
-import io.reactivex.rxjava3.schedulers.Schedulers
+import io.reactivex.Single
+import io.reactivex.schedulers.Schedulers
 
-class MovieListDataSource(private val compositeDisposable: CompositeDisposable) : PageKeyedDataSource<Int, Movie>() {
+class MovieListDataSource : RxPagingSource<Int, Movie>() {
 
-    val networkState = MutableLiveData<NetworkState>()
+    private val networkState = MutableLiveData<NetworkState>()
 
-    override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, Movie>) {}
-
-    override fun loadInitial(
-        params: LoadInitialParams<Int>,
-        callback: LoadInitialCallback<Int, Movie>
-    ) {
+    override fun loadSingle(params: LoadParams<Int>): Single<LoadResult<Int, Movie>> {
+        val currentKey = params.key ?: 1
         networkState.postValue(NetworkState.Loading)
-        compositeDisposable.add(
-            ApiManager.tmdbApi.getTopRatedMovies(page = 1)
-                .subscribeOn(Schedulers.io())
-                .unsubscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                    onNext = {
-                        callback.onResult(it.movies ?: emptyList(), 0, it.totalResults ?: 0, null, 2)
-                        networkState.postValue(NetworkState.Success)
-                    },
-                    onError = {
-                        networkState.postValue(NetworkState.Error(it))
-                    }
-                )
-        )
+        return ApiManager.tmdbApi.getTopRatedMovies(currentKey)
+            .subscribeOn(Schedulers.io())
+            .map {
+                networkState.postValue(NetworkState.Success)
+                val prevKey = if (currentKey == 1) null else currentKey.minus(1)
+                LoadResult.Page<Int, Movie>(
+                    data = it.movies ?: emptyList(),
+                    prevKey = prevKey,
+                    nextKey = currentKey.plus(1)
+                ) as LoadResult<Int, Movie>
+            }.onErrorReturn {
+                networkState.postValue(NetworkState.Error(it))
+                LoadResult.Error(it)
+            }
     }
 
-    override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, Movie>) {
-        networkState.postValue(NetworkState.Loading)
-        compositeDisposable.add(
-            ApiManager.tmdbApi.getTopRatedMovies(params.key)
-                .subscribeOn(Schedulers.io())
-                .unsubscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeBy(
-                    onNext = {
-                        callback.onResult(it.movies ?: emptyList(), it.page?.plus(1))
-                        networkState.postValue(NetworkState.Success)
-                    },
-                    onError = {
-                        networkState.postValue(NetworkState.Error(it))
-                    }
-                )
-        )
-    }
 }
