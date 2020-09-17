@@ -5,7 +5,7 @@ import com.eric.chung.epoxypagingsample.network.ApiManager
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 
-class MovieListSourceFactory : RxPagingSource<Int, Movie>() {
+class MovieListPagingSource : RxPagingSource<Int, Movie>() {
 
     override fun loadSingle(params: LoadParams<Int>): Single<LoadResult<Int, Movie>> {
         val currentKey = params.key ?: 1
