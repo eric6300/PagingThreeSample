@@ -2,16 +2,13 @@ package com.eric.chung.epoxypagingsample.data.source
 
 import androidx.lifecycle.LiveData
 import androidx.paging.*
-import androidx.paging.rxjava2.cachedIn
-import androidx.paging.rxjava2.flowable
 import com.eric.chung.epoxypagingsample.data.Movie
-import com.eric.chung.epoxypagingsample.data.MovieListDataSource
-import io.reactivex.Flowable
+import com.eric.chung.epoxypagingsample.data.MovieListSourceFactory
 import kotlinx.coroutines.CoroutineScope
 
 class MovieRemoteDataSource(private val viewModelScope: CoroutineScope) : DataSource {
 
-    private val sourceFactory = MovieListDataSource()
+    private val sourceFactory = MovieListSourceFactory()
 
     private val pager = Pager(
         config = PagingConfig(
